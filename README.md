@@ -161,12 +161,52 @@ The roadmap for a corrected version, in order of expected impact:
 
 ---
 
-## Reproducing
+## Evaluation limitations affecting reported metrics
 
-```bash
-git clone https://github.com/hackeradhii/melanoma-siamese.git
-cd melanoma-siamese
-pip install -r requirements.txt
+Tracking issue for evaluation problems identified after publication.
+Recorded here for transparency; a corrected study is in preparation.
+
+## Issues
+
+1. **Cohort size.** 93 unique lesions after filtering for dermoscopic
+   imaging with recorded Breslow thickness; 19 images held out for
+   validation.
+
+2. **Single Stage III validation sample.** Per-class metrics for
+   Stage III (P=0.333, R=1.000, F1=0.500) are computed from one image
+   and are not meaningful.
+
+3. **Accuracy does not exceed the majority-class baseline.** Reported
+   68.42% (13/19) against a constant Stage I classifier at 73.68%
+   (14/19). Wilson 95% CI: [46%, 85%]. The model does exceed the
+   trivial baseline on macro-F1 (0.590 vs 0.283).
+
+4. **Model selection performed on the reported split.** Best checkpoint
+   is chosen by validation accuracy across 50 epochs and the same split
+   is then reported. A three-way train/validation/test split is required.
+
+5. **Embedding normalisation mismatch.** The training model applies
+   `F.normalize(x, p=2, dim=1)`; the evaluation model does not. This
+   produces two different accuracies (63.16% and 68.42%) from identical
+   weights. Neither should be quoted.
+
+6. **Memorisation.** Training loss falls 0.2854 -> 0.0037 with flat
+   accuracy. With `TARGET_COUNT=40` and `replace=True`, positive pairs
+   frequently consist of the same photograph under two augmentations.
+
+7. **Patient-level leakage not controlled.** Deduplication is by
+   `lesion_id`, not `patient_id`.
+
+## Planned corrections
+
+- Expand cohort using pooled ISIC releases with Breslow metadata
+- Reduce to binary classification (thin <0.8mm / thick >=0.8mm)
+- Three-way split; report once on a held-out test set
+- Fix the normalisation mismatch
+- Report confidence intervals and the majority-class baseline alongside
+  all accuracy figures
+- Split by `patient_id`
+- Sample positive pairs without replacement
 ```
 
 Requires the ISIC dermoscopic subset with `mel_thick_mm` metadata. The notebook's Kaggle credential cells have been removed — configure `~/.kaggle/kaggle.json` yourself before running.
@@ -183,9 +223,4 @@ MIT — see [LICENSE](LICENSE). **Research code. Not a medical device, and not f
 
 ---
 
-<div align="center">
 
-Part of a series on applied deep learning  
-[WGT-Net](https://github.com/hackeradhii/wgt-net) · [WH-PhishNet](https://github.com/hackeradhii/wh-phisnet) · [TRIDENT](https://github.com/hackeradhii/trident-nids) · [CSDTab-ID](https://github.com/hackeradhii/csdtab-id)
-
-</div>
